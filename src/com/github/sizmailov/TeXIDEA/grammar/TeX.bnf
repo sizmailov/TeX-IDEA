@@ -1,0 +1,54 @@
+{
+  parserClass="com.github.sizmailov.TeXIDEA.parser.TexParser"
+
+  extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+  psiClassPrefix="Tex"
+  psiImplClassSuffix="Impl"
+  psiPackage="com.github.sizmailov.TeXIDEA.psi"
+  psiImplPackage="com.github.sizmailov.TeXIDEA.psi.impl"
+
+  elementTypeHolderClass="com.github.sizmailov.TeXIDEA.psi.TexTypes"
+  elementTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXElementType"
+  tokenTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXTokenType"
+
+  tokens=[
+        INLINE_MATH_END='regexp:(\$|\\\))'
+        ENV_BEGIN='\begin'
+        ENV_END='\end'
+        COMMAND_IDENTIFIER='regexp:([a-zA-Z@]{2,}|[^a-zA-Z@\r\n])'
+        ENVIRONMENT_IDENTIFIER='regexp:[^{}]+'
+        NORMAL_TEXT_WORD='regexp:[^\s\\{}%\[\]$\(\)]+'
+        COMMENT_CONTENT='regexp:[^\r\n]*'
+]
+}
+
+
+latexFile ::= content*
+
+content ::= math_context | text_context | comment_context
+comment_context ::= "%" COMMENT_CONTENT
+
+math_context ::=
+    "\\[" math_content* "\\]"
+    "\\(" math_content* "\\)"
+    "$$" math_content* "$$"
+    "$" math_content* "$"
+
+math_content ::= math_element+
+math_element ::= context_within_math |
+        NORMAL_TEXT_WORD |
+        command |
+        "{" math_element "}" |
+        "[" math_element "]" |
+        "(" math_element ")"
+
+context_within_math ::=
+        "\\mbox" "{" content "}"
+
+text_context ::= text_content+
+text_content ::= text_element+
+command ::= "\\" COMMAND_IDENTIFIER
+environment ::= ENV_BEGIN "{" ENVIRONMENT_IDENTIFIER "}" text_element* ENV_END "{" ENVIRONMENT_IDENTIFIER "}"
+text_element ::= group | NORMAL_TEXT_WORD | command | environment
+group ::= "{" text_element "}"
