@@ -13,6 +13,12 @@
   tokenTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXTokenType"
 
   tokens=[
+        inline_math_dollar = "$"
+        inline_math_begin_parentheses = "\("
+        inline_math_end_parentheses = "\)"
+        display_math_dollar = "$$"
+        display_math_begin_parentheses = 'regexp:\\\['
+        display_math_end_parentheses = 'regexp:\\\]'
         command = 'regexp:(\\([a-zA-Z@]+|\\|.))'
         word = 'regexp:[^\s\\{}%\[\]$\(\)]+'
         new_line = 'regexp:[\r\n]*'
@@ -26,8 +32,8 @@
         comment_begin = "%"
         escape = "\\"
         comment_context = 'regexp:%[^\r\n]*'
-        math_environment_context_identifier = 'regexp:(equation*?|eqnarray*?)'
-        environment_identifier = 'regexp:([^{}])'
+        environment_identifier = 'regexp:([^\${}]*)'
+        brakets='regexp:([\[\]()])'
 ]
 }
 
@@ -37,10 +43,8 @@ latexFile ::= context*
 context ::= text_context | comment_context
 
 text_context ::= text_content+
-text_content ::= text_element+
-text_element ::= text_group | word | command | text_environment_context | math_context | brackets
-
-brackets ::= bracket_left | bracket_right | parentheses_left | parentheses_right
+private text_content ::= text_element+
+private text_element ::= text_group | word | command | environment_context | math_context | brackets
 
 group_begin ::= "{"
 group_end ::= "}"
@@ -48,37 +52,25 @@ group_end ::= "}"
 text_group ::= group_begin text_element* group_end
 math_group ::= group_begin math_element* group_end
 
-
-math_parentheses_group ::= parentheses_left math_element* parentheses_right
-math_brackets_group ::= bracket_left math_element* bracket_right
-
-
-
 math_context ::= inline_math_context | display_math_context
 
-inline_math_context ::=   "$" math_content "$" |
-                        "\\(" math_content "\\)"
 
-display_math_context ::=  "$$" math_content "$$"
-                         "\\[" math_content "\\]"
+display_math_context ::= display_math_dollar math_content display_math_dollar
+                         display_math_end_parentheses math_content display_math_end_parentheses
 
-
-math_content ::= math_element*
-math_element ::= math_group | command | word | math_environment_context | math_parentheses_group | math_brackets_group
+inline_math_context ::=  inline_math_dollar math_content inline_math_dollar |
+                         inline_math_begin_parentheses math_content inline_math_end_parentheses
 
 
-math_environment_context_begin ::= "\\begin" "{" math_environment_context_identifier "}"
-math_environment_context_end ::= "\\begin" "{" math_environment_context_identifier "}"
+private math_content ::= math_element*
+private math_element ::= math_group | command | word | environment_context | brackets
 
 
 environment_begin ::= "\\begin" "{" environment_identifier "}"
 environment_end ::= "\\begin" "{" environment_identifier "}"
 
-text_environment_context ::= environment_begin text_environment_content* environment_end
-text_environment_content ::= context
-
-math_environment_context ::= environment_begin math_environment_content* environment_end
-math_environment_content ::= math_context
+environment_context ::= environment_begin environment_content* environment_end
+environment_content ::= context
 
 
 
