@@ -54,7 +54,7 @@ math_group ::= "{" math_element* "}"
 math_context ::= inline_math_context | display_math_context
 
 
-display_math_context ::= "$" math_content "$$"
+display_math_context ::= "$$" math_content "$$" |
                          "\[" math_content "\]"
 
 inline_math_context ::=  "$" math_content "$" |
