@@ -16,6 +16,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
             <fileTypeFactory implementation="com.github.sizmailov.TeXIDEA.TeXFileTypeFactory"/>
+        <lang.parserDefinition language="TeX" implementationClass="com.github.sizmailov.TeXIDEA.TeXParserDefinition"/>
+
     </extensions>
 
     <actions>
