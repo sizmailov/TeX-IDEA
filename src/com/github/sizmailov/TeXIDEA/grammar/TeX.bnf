@@ -32,7 +32,7 @@
         comment_begin = "%"
         escape = "\\"
         comment_context = 'regexp:%[^\r\n]*'
-        environment_identifier = 'regexp:([^\${}]*)'
+        environment_identifier = 'regexp:([^\${}]+)'
         brakets='regexp:([\[\]()])'
 ]
 }
@@ -43,31 +43,28 @@ latexFile ::= context*
 context ::= text_context | comment_context
 
 text_context ::= text_content+
-private text_content ::= text_element+
-private text_element ::= text_group | word | command | environment_context | math_context | brackets
+text_content ::= text_element+
+text_element ::= text_group | word | command | environment_context | math_context | brackets
 
-group_begin ::= "{"
-group_end ::= "}"
-
-text_group ::= group_begin text_element* group_end
-math_group ::= group_begin math_element* group_end
+text_group ::= "{" text_element* "}"
+math_group ::= "{" math_element* "}"
 
 math_context ::= inline_math_context | display_math_context
 
 
 display_math_context ::= display_math_dollar math_content display_math_dollar
-                         display_math_end_parentheses math_content display_math_end_parentheses
+                         display_math_begin_parentheses math_content display_math_end_parentheses
 
 inline_math_context ::=  inline_math_dollar math_content inline_math_dollar |
                          inline_math_begin_parentheses math_content inline_math_end_parentheses
 
 
-private math_content ::= math_element*
-private math_element ::= math_group | command | word | environment_context | brackets
+math_content ::= math_element*
+math_element ::= math_group | command | word | environment_context | brackets
 
 
 environment_begin ::= "\\begin" "{" environment_identifier "}"
-environment_end ::= "\\begin" "{" environment_identifier "}"
+environment_end ::= "\\end" "{" environment_identifier "}"
 
 environment_context ::= environment_begin environment_content* environment_end
 environment_content ::= context
