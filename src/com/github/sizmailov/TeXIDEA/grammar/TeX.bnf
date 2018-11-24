@@ -13,12 +13,14 @@
   tokenTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXTokenType"
 
   tokens=[
+        environment_begin_token = "\begin"
+        environment_end_token = "\end"
         inline_math_dollar = "$"
         inline_math_begin_parentheses = "\("
         inline_math_end_parentheses = "\)"
         display_math_dollar = "$$"
-        display_math_begin_parentheses = 'regexp:\\\['
-        display_math_end_parentheses = 'regexp:\\\]'
+        display_math_begin_parentheses = "\["
+        display_math_end_parentheses = "\]"
         command = 'regexp:(\\([a-zA-Z@]+|\\|.))'
         word = 'regexp:[^\s\\{}%\[\]$\(\)]+'
         new_line = 'regexp:[\r\n]*'
@@ -52,19 +54,19 @@ math_group ::= "{" math_element* "}"
 math_context ::= inline_math_context | display_math_context
 
 
-display_math_context ::= display_math_dollar math_content display_math_dollar
-                         display_math_begin_parentheses math_content display_math_end_parentheses
+display_math_context ::= "$" math_content "$$"
+                         "\[" math_content "\]"
 
-inline_math_context ::=  inline_math_dollar math_content inline_math_dollar |
-                         inline_math_begin_parentheses math_content inline_math_end_parentheses
+inline_math_context ::=  "$" math_content "$" |
+                         "\(" math_content "\)"
 
 
 math_content ::= math_element*
 math_element ::= math_group | command | word | environment_context | brackets
 
 
-environment_begin ::= "\\begin" "{" environment_identifier "}"
-environment_end ::= "\\end" "{" environment_identifier "}"
+environment_begin ::= "\begin" "{" environment_identifier "}"
+environment_end ::= "\end" "{" environment_identifier "}"
 
 environment_context ::= environment_begin environment_content* environment_end
 environment_content ::= context

@@ -16,12 +16,15 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
   private Deque<Integer> stack = new ArrayDeque<>();
 
   public void yypushState(int newState) {
+    System.out.println("Save state " + yystate());
     stack.push(yystate());
+    System.out.println("Set new state " + newState);
     yybegin(newState);
   }
 
   public void yypopState() {
     yybegin(stack.pop());
+    System.out.println("Restore state " + yystate());
   }
   public void log(String stateName){
       System.out.println(new String(new char[stack.size()]).replace("\0", " ") + "->" + stateName);
@@ -44,8 +47,6 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 EOL=\R
 WHITE_SPACE=\s+
 
-DISPLAY_MATH_BEGIN_PARENTHESES=\\\[
-DISPLAY_MATH_END_PARENTHESES=\\\]
 COMMAND=(\\([a-zA-Z@]+|\\|.))
 WORD=[^\s\\{}%\[\]$\(\)]+
 NEW_LINE=[\r\n]*
@@ -54,21 +55,21 @@ COMMENT_CONTEXT=%[^\r\n]*
 ENVIRONMENT_IDENTIFIER=([^\${}]+)
 BRAKETS=([\[\]()])
 
-%states WITHIN_ENVIRONMENT WITHIN_TEXT_GROUP WITHIN_MATH_GROUP WITHIN_COMMENT WITHIN_MATH_CONTEXT WITHIN_INLINE_MATH_DOLLAR WITHIN_INLINE_MATH_PARENTHESES WITHIN_DISPLAY_MATH_DOLLAR WITHIN_DISPLAY_MATH_PARENTHESES OPEN_ENVIRONMENT_1 OPEN_ENVIRONMENT_2 READ_OPENED_ENVID CLOSE_ENVIRONMENT_1 CLOSE_ENVIRONMENT_2 READ_CLOSED_ENVID
+%states WITHIN_ENVIRONMENT WITHIN_TEXT_GROUP WITHIN_MATH_GROUP WITHIN_COMMENT WITHIN_INLINE_MATH_DOLLAR WITHIN_INLINE_MATH_PARENTHESES WITHIN_DISPLAY_MATH_DOLLAR WITHIN_DISPLAY_MATH_PARENTHESES EXPECT_ENV_BEGIN_OPEN_BRACE EXPECT_ENV_BEGIN_CLOSE_BRACE EXPECT_ENV_BEGIN_ID EXPECT_ENV_END_OPEN_BRACE EXPECT_ENV_END_CLOSE_BRACE EXPECT_ENV_END_ID
 
 %%
 
 
 <YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP> {
     "$$"                                            { log("$$ in "); yypushState(WITHIN_DISPLAY_MATH_DOLLAR); return DISPLAY_MATH_DOLLAR; }
-    {DISPLAY_MATH_BEGIN_PARENTHESES}                { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES; }
+    "\\["                                           { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES; }
     "$"                                             { log("$ in "); yypushState(WITHIN_INLINE_MATH_DOLLAR); return INLINE_MATH_DOLLAR; }
     "\\("                                           { log("\\( in ");yypushState(WITHIN_INLINE_MATH_PARENTHESES); return INLINE_MATH_BEGIN_PARENTHESES; }
 
 }
 
 <WITHIN_DISPLAY_MATH_PARENTHESES> {
-    {DISPLAY_MATH_BEGIN_PARENTHESES}               { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES; }
+    "\\]"                                           { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES; }
 }
 
 <WITHIN_DISPLAY_MATH_DOLLAR> {
@@ -79,38 +80,37 @@ BRAKETS=([\[\]()])
     "\\)"                                          { log("\\) out"); yypopState(); return INLINE_MATH_END_PARENTHESES; }
 }
 
-
 <WITHIN_INLINE_MATH_DOLLAR> {
     "$"                                            { log("$ out");yypopState(); return INLINE_MATH_DOLLAR; }
 }
 
 
 <WITHIN_ENVIRONMENT>{
- "\\end"       { log("env out"); yybegin(CLOSE_ENVIRONMENT_1); return ENVIRONMENT_END; }
+ "\\end"       { log("env out"); yybegin(EXPECT_ENV_END_OPEN_BRACE); return ENVIRONMENT_END_TOKEN; }
 }
 
 
-<OPEN_ENVIRONMENT_1>{
-    "{"  { log("env in {");  yybegin(READ_OPENED_ENVID); return BRACE_LEFT; }
+<EXPECT_ENV_BEGIN_OPEN_BRACE>{
+    "{"  { log("env in {");  yybegin(EXPECT_ENV_BEGIN_ID); return BRACE_LEFT; }
 }
 
-<READ_OPENED_ENVID>{
-    {ENVIRONMENT_IDENTIFIER}  { log("env in <id>"); yybegin(OPEN_ENVIRONMENT_2); return ENVIRONMENT_IDENTIFIER; }
+<EXPECT_ENV_BEGIN_ID>{
+    {ENVIRONMENT_IDENTIFIER}  { log("env in <id>"); yybegin(EXPECT_ENV_BEGIN_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
 }
 
-<OPEN_ENVIRONMENT_2>{
-    "}"  { log("env in }"); yypushState(WITHIN_ENVIRONMENT); return BRACE_RIGHT; }
+<EXPECT_ENV_BEGIN_CLOSE_BRACE>{
+    "}"  { log("env in }"); yybegin(WITHIN_ENVIRONMENT); return BRACE_RIGHT; }
 }
 
-<CLOSE_ENVIRONMENT_1>{
-    "{"  { log("env out {"); yybegin(READ_CLOSED_ENVID); return BRACE_LEFT; }
+<EXPECT_ENV_END_OPEN_BRACE>{
+    "{"  { log("env out {"); yybegin(EXPECT_ENV_END_ID); return BRACE_LEFT; }
 }
 
-<READ_CLOSED_ENVID>{
-    {ENVIRONMENT_IDENTIFIER}  { log("env out <id>"); yybegin(CLOSE_ENVIRONMENT_2); return ENVIRONMENT_IDENTIFIER; }
+<EXPECT_ENV_END_ID>{
+    {ENVIRONMENT_IDENTIFIER}  { log("env out <id>"); yybegin(EXPECT_ENV_END_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
 }
 
-<CLOSE_ENVIRONMENT_2>{
+<EXPECT_ENV_END_CLOSE_BRACE>{
     "}" { log("env out }"); yypopState(); return BRACE_RIGHT; }
 }
 
@@ -120,7 +120,7 @@ BRAKETS=([\[\]()])
  "{"                                                          { log("text group in {"); yypushState(WITHIN_TEXT_GROUP); return BRACE_LEFT; }
 }
 
-<WITHIN_MATH_CONTEXT, WITHIN_MATH_GROUP>{
+<WITHIN_INLINE_MATH_PARENTHESES,WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_MATH_GROUP>{
  "{"                                                          { log("math group in {"); yypushState(WITHIN_MATH_GROUP); return BRACE_LEFT; }
 }
 
@@ -135,8 +135,8 @@ BRAKETS=([\[\]()])
 
 
 
-<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP, WITHIN_MATH_GROUP, WITHIN_MATH_CONTEXT, OPEN_ENVIRONMENT_1,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES, WITHIN_INLINE_MATH_PARENTHESES> {
- "\\begin"                  { log("env in"); yybegin(OPEN_ENVIRONMENT_1); return ENVIRONMENT_BEGIN; }
+<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP, WITHIN_MATH_GROUP, EXPECT_ENV_BEGIN_OPEN_BRACE,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES, WITHIN_INLINE_MATH_PARENTHESES> {
+ "\\begin"                  { log("env in"); yypushState(EXPECT_ENV_BEGIN_OPEN_BRACE); return ENVIRONMENT_BEGIN_TOKEN; }
  {BRAKETS}                                                    {log("[]()"); return BRACKETS; }
  {WHITE_SPACE}                                                {log("<space>"); return WHITE_SPACE; }
  {COMMENT_CONTEXT}                                            {log("<comment>"); return COMMENT_CONTEXT; }
