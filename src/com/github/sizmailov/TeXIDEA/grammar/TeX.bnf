@@ -1,54 +1,84 @@
 {
-  parserClass="com.github.sizmailov.TeXIDEA.parser.TexParser"
+  parserClass="com.github.sizmailov.TeXIDEA.parser.TeXParser"
 
   extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
 
-  psiClassPrefix="Tex"
+  psiClassPrefix="TeX"
   psiImplClassSuffix="Impl"
   psiPackage="com.github.sizmailov.TeXIDEA.psi"
   psiImplPackage="com.github.sizmailov.TeXIDEA.psi.impl"
 
-  elementTypeHolderClass="com.github.sizmailov.TeXIDEA.psi.TexTypes"
+  elementTypeHolderClass="com.github.sizmailov.TeXIDEA.psi.TeXTypes"
   elementTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXElementType"
   tokenTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXTokenType"
 
   tokens=[
-        INLINE_MATH_END='regexp:(\$|\\\))'
-        ENV_BEGIN='\begin'
-        ENV_END='\end'
-        COMMAND_IDENTIFIER='regexp:([a-zA-Z@]{2,}|[^a-zA-Z@\r\n])'
-        ENVIRONMENT_IDENTIFIER='regexp:[^{}]+'
-        NORMAL_TEXT_WORD='regexp:[^\s\\{}%\[\]$\(\)]+'
-        COMMENT_CONTENT='regexp:[^\r\n]*'
+        command = 'regexp:(\\([a-zA-Z@]+|\\|.))'
+        word = 'regexp:[^\s\\{}%\[\]$\(\)]+'
+        new_line = 'regexp:[\r\n]*'
+        space = 'regexp:\s+'
+        brace_left = "{"
+        brace_right = "}"
+        bracket_left = "["
+        bracket_right = "]"
+        parentheses_left = "("
+        parentheses_right = ")"
+        comment_begin = "%"
+        escape = "\\"
+        comment_context = 'regexp:%[^\r\n]*'
+        math_environment_context_identifier = 'regexp:(equation*?|eqnarray*?)'
+        environment_identifier = 'regexp:([^{}])'
 ]
 }
 
 
-latexFile ::= content*
+latexFile ::= context*
 
-content ::= math_context | text_context | comment_context
-comment_context ::= "%" COMMENT_CONTENT
-
-math_context ::=
-    "\\[" math_content* "\\]"
-    "\\(" math_content* "\\)"
-    "$$" math_content* "$$"
-    "$" math_content* "$"
-
-math_content ::= math_element+
-math_element ::= context_within_math |
-        NORMAL_TEXT_WORD |
-        command |
-        "{" math_element "}" |
-        "[" math_element "]" |
-        "(" math_element ")"
-
-context_within_math ::=
-        "\\mbox" "{" content "}"
+context ::= text_context | comment_context
 
 text_context ::= text_content+
 text_content ::= text_element+
-command ::= "\\" COMMAND_IDENTIFIER
-environment ::= ENV_BEGIN "{" ENVIRONMENT_IDENTIFIER "}" text_element* ENV_END "{" ENVIRONMENT_IDENTIFIER "}"
-text_element ::= group | NORMAL_TEXT_WORD | command | environment
-group ::= "{" text_element "}"
+text_element ::= text_group | word | command | text_environment_context | math_context | brackets
+
+brackets ::= bracket_left | bracket_right | parentheses_left | parentheses_right
+
+group_begin ::= "{"
+group_end ::= "}"
+
+text_group ::= group_begin text_element* group_end
+math_group ::= group_begin math_element* group_end
+
+
+math_parentheses_group ::= parentheses_left math_element* parentheses_right
+math_brackets_group ::= bracket_left math_element* bracket_right
+
+
+
+math_context ::= inline_math_context | display_math_context
+
+inline_math_context ::=   "$" math_content "$" |
+                        "\\(" math_content "\\)"
+
+display_math_context ::=  "$$" math_content "$$"
+                         "\\[" math_content "\\]"
+
+
+math_content ::= math_element*
+math_element ::= math_group | command | word | math_environment_context | math_parentheses_group | math_brackets_group
+
+
+math_environment_context_begin ::= "\\begin" "{" math_environment_context_identifier "}"
+math_environment_context_end ::= "\\begin" "{" math_environment_context_identifier "}"
+
+
+environment_begin ::= "\\begin" "{" environment_identifier "}"
+environment_end ::= "\\begin" "{" environment_identifier "}"
+
+text_environment_context ::= environment_begin text_environment_content* environment_end
+text_environment_content ::= context
+
+math_environment_context ::= environment_begin math_environment_content* environment_end
+math_environment_content ::= math_context
+
+
+
