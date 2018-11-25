@@ -13,50 +13,55 @@
   tokenTypeClass="com.github.sizmailov.TeXIDEA.psi.TeXTokenType"
 
   tokens=[
-        environment_begin_token = "\begin"
-        environment_end_token = "\end"
-        dollars = "$+"
-        inline_math_dollar = "$"
-        inline_math_begin_parentheses = "\("
-        inline_math_end_parentheses = "\)"
-        display_math_dollar = "$$"
-        display_math_begin_parentheses = "\["
-        display_math_end_parentheses = "\]"
-        command = 'regexp:(\\([a-zA-Z@]+|\\|.))'
-        word = 'regexp:[^\s\\{}%\[\]$\(\)]+'
-        new_line = 'regexp:[\r\n]*'
-        space = 'regexp:\s+'
-        brace_left = "{"
-        brace_right = "}"
-        bracket_left = "["
-        bracket_right = "]"
-        parentheses_left = "("
-        parentheses_right = ")"
-        comment_begin = "%"
-        escape = "\\"
-        comment_context = 'regexp:%[^\r\n]*'
-        environment_identifier = 'regexp:([^\${}]+)'
+        ENVIRONMENT_BEGIN_TOKEN = "\begin"
+        ENVIRONMENT_END_TOKEN = "\end"
+        DOLLARS = "$+"
+        INLINE_MATH_DOLLAR = "$"
+        INLINE_MATH_BEGIN_PARENTHESES = "\("
+        INLINE_MATH_END_PARENTHESES = "\)"
+        DISPLAY_MATH_DOLLAR = "$$"
+        DISPLAY_MATH_BEGIN_PARENTHESES = "\["
+        DISPLAY_MATH_END_PARENTHESES = "\]"
+        NEWCOMMAND_TOKEN = 'regexp:(\\(re)newcommand\*?)'
+        COMMAND = 'regexp:(\\([a-zA-Z@]+|.|\n|\r))'
+        WORD = 'regexp:[^\s\\{}%\[\]$\(\)]+'
+        NEW_LINE = 'regexp:[\r\n]*'
+        SPACE = 'regexp:\s+'
+        BRACE_LEFT = "{"
+        BRACE_RIGHT = "}"
+        BRACKET_LEFT = "["
+        BRACKET_RIGHT = "]"
+        PARENTHESES_LEFT = "("
+        PARENTHESES_RIGHT = ")"
+        COMMENT_CONTEXT_TOKEN = 'regexp:%[^\r\n]*'
+        ENVIRONMENT_IDENTIFIER = 'regexp:([^\${}]+)'
 ]
 }
 
 
 latexFile ::= context*
 
-context ::= generic_context | comment_context
+private context ::= comment_context | environment_context | math_context | text_context | generic_context | newcommand_context
+
+comment_context ::= COMMENT_CONTEXT_TOKEN
+newcommand_context ::= NEWCOMMAND_TOKEN newcommand_name ( "[" newcommand_nargs "]" ("[" newcommand_optarg "]")? )? "{" newcommand_body "}"
+newcommand_name ::=  "{" COMMAND "}" | COMMAND
+newcommand_nargs ::= WORD
+newcommand_optarg ::= (group | WORD | COMMAND | "(" | ")" | "["  | DOLLARS)*
+newcommand_body ::= generic_context?
 
 generic_context ::= generic_content
 generic_content ::= generic_element+
-private generic_element ::= text_group | word | command | brackets | dollars
+private generic_element ::= group | WORD | COMMAND | brackets | DOLLARS
 
 text_context ::= text_content
 text_content ::= text_element+
-text_element ::= text_group | word | command | environment_context | math_context | brackets
 
+private text_element ::= group | WORD | COMMAND | brackets
 
-brackets ::= "(" | ")" | "[" | "]"
+private brackets ::= "(" | ")" | "[" | "]"
 
-text_group ::= "{" text_element* "}"
-math_group ::= "{" math_element* "}"
+group ::= "{" context* "}"
 
 math_context ::= inline_math_context | display_math_context
 
@@ -69,14 +74,14 @@ inline_math_context ::=  "$" math_content "$" |
 
 
 math_content ::= math_element*
-math_element ::= math_group | command | word | environment_context | brackets
+private math_element ::= group | COMMAND | WORD | brackets | environment_context
 
 
-environment_begin ::= "\begin" "{" environment_identifier "}"
-environment_end ::= "\end" "{" environment_identifier "}"
+environment_begin ::= "\begin" "{" ENVIRONMENT_IDENTIFIER "}"
+environment_end ::= "\end" "{" ENVIRONMENT_IDENTIFIER "}"
 
-environment_context ::= environment_begin environment_content* environment_end
-environment_content ::= context
+environment_context ::= environment_begin environment_content environment_end
+environment_content ::= context*
 
 
 
