@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXMathGroupImpl extends ASTWrapperPsiElement implements TeXMathGroup {
+public class TeXGenericContentImpl extends ASTWrapperPsiElement implements TeXGenericContent {
 
-  public TeXMathGroupImpl(@NotNull ASTNode node) {
+  public TeXGenericContentImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitMathGroup(this);
+    visitor.visitGenericContent(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {
@@ -28,8 +28,8 @@ public class TeXMathGroupImpl extends ASTWrapperPsiElement implements TeXMathGro
 
   @Override
   @NotNull
-  public List<TeXMathElement> getMathElementList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXMathElement.class);
+  public List<TeXGroup> getGroupList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXGroup.class);
   }
 
 }

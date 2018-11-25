@@ -28,8 +28,8 @@ public class TeXTextContextImpl extends ASTWrapperPsiElement implements TeXTextC
 
   @Override
   @NotNull
-  public List<TeXTextContent> getTextContentList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXTextContent.class);
+  public TeXTextContent getTextContent() {
+    return findNotNullChildByClass(TeXTextContent.class);
   }
 
 }

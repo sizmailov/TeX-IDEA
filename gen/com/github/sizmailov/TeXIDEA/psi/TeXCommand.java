@@ -5,9 +5,12 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface TeXTextContext extends PsiElement {
+public interface TeXCommand extends PsiElement {
 
-  @NotNull
-  TeXTextContent getTextContent();
+  @Nullable
+  TeXNewcommand getNewcommand();
+
+  @Nullable
+  PsiElement getGenericCommand();
 
 }

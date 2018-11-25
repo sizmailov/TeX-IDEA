@@ -23,8 +23,8 @@ public class TeXParser implements PsiParser, LightPsiParser {
     boolean r;
     b = adapt_builder_(t, b, this, null);
     Marker m = enter_section_(b, 0, _COLLAPSE_, null);
-    if (t == CONTEXT) {
-      r = context(b, 0);
+    if (t == COMMENT_CONTEXT) {
+      r = comment_context(b, 0);
     }
     else if (t == DISPLAY_MATH_CONTEXT) {
       r = display_math_context(b, 0);
@@ -41,6 +41,15 @@ public class TeXParser implements PsiParser, LightPsiParser {
     else if (t == ENVIRONMENT_END) {
       r = environment_end(b, 0);
     }
+    else if (t == GENERIC_CONTENT) {
+      r = generic_content(b, 0);
+    }
+    else if (t == GENERIC_CONTEXT) {
+      r = generic_context(b, 0);
+    }
+    else if (t == GROUP) {
+      r = group(b, 0);
+    }
     else if (t == INLINE_MATH_CONTEXT) {
       r = inline_math_context(b, 0);
     }
@@ -50,23 +59,26 @@ public class TeXParser implements PsiParser, LightPsiParser {
     else if (t == MATH_CONTEXT) {
       r = math_context(b, 0);
     }
-    else if (t == MATH_ELEMENT) {
-      r = math_element(b, 0);
+    else if (t == NEWCOMMAND_BODY) {
+      r = newcommand_body(b, 0);
     }
-    else if (t == MATH_GROUP) {
-      r = math_group(b, 0);
+    else if (t == NEWCOMMAND_CONTEXT) {
+      r = newcommand_context(b, 0);
+    }
+    else if (t == NEWCOMMAND_NAME) {
+      r = newcommand_name(b, 0);
+    }
+    else if (t == NEWCOMMAND_NARGS) {
+      r = newcommand_nargs(b, 0);
+    }
+    else if (t == NEWCOMMAND_OPTARG) {
+      r = newcommand_optarg(b, 0);
     }
     else if (t == TEXT_CONTENT) {
       r = text_content(b, 0);
     }
     else if (t == TEXT_CONTEXT) {
       r = text_context(b, 0);
-    }
-    else if (t == TEXT_ELEMENT) {
-      r = text_element(b, 0);
-    }
-    else if (t == TEXT_GROUP) {
-      r = text_group(b, 0);
     }
     else {
       r = parse_root_(t, b, 0);
@@ -79,19 +91,47 @@ public class TeXParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // text_context | comment_context
-  public static boolean context(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "context")) return false;
+  // "(" | ")" | "[" | "]"
+  static boolean brackets(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "brackets")) return false;
     boolean r;
-    Marker m = enter_section_(b, l, _NONE_, CONTEXT, "<context>");
-    r = text_context(b, l + 1);
-    if (!r) r = consumeToken(b, COMMENT_CONTEXT);
-    exit_section_(b, l, m, r, false, null);
+    Marker m = enter_section_(b);
+    r = consumeToken(b, PARENTHESES_LEFT);
+    if (!r) r = consumeToken(b, PARENTHESES_RIGHT);
+    if (!r) r = consumeToken(b, BRACKET_LEFT);
+    if (!r) r = consumeToken(b, BRACKET_RIGHT);
+    exit_section_(b, m, null, r);
     return r;
   }
 
   /* ********************************************************** */
-  // "$$" math_content "$$" | 
+  // COMMENT_CONTEXT_TOKEN
+  public static boolean comment_context(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "comment_context")) return false;
+    if (!nextTokenIs(b, COMMENT_CONTEXT_TOKEN)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, COMMENT_CONTEXT_TOKEN);
+    exit_section_(b, m, COMMENT_CONTEXT, r);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // comment_context | environment_context | math_context | text_context | generic_context | newcommand_context
+  static boolean context(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "context")) return false;
+    boolean r;
+    r = comment_context(b, l + 1);
+    if (!r) r = environment_context(b, l + 1);
+    if (!r) r = math_context(b, l + 1);
+    if (!r) r = text_context(b, l + 1);
+    if (!r) r = generic_context(b, l + 1);
+    if (!r) r = newcommand_context(b, l + 1);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // "$$" math_content "$$" |
   //                          "\[" math_content "\]"
   public static boolean display_math_context(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "display_math_context")) return false;
@@ -129,7 +169,7 @@ public class TeXParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // "\begin" "{" environment_identifier "}"
+  // "\begin" "{" ENVIRONMENT_IDENTIFIER "}"
   public static boolean environment_begin(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "environment_begin")) return false;
     if (!nextTokenIs(b, ENVIRONMENT_BEGIN_TOKEN)) return false;
@@ -141,43 +181,35 @@ public class TeXParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // context
+  // context*
   public static boolean environment_content(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "environment_content")) return false;
-    boolean r;
     Marker m = enter_section_(b, l, _NONE_, ENVIRONMENT_CONTENT, "<environment content>");
-    r = context(b, l + 1);
-    exit_section_(b, l, m, r, false, null);
-    return r;
+    while (true) {
+      int c = current_position_(b);
+      if (!context(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "environment_content", c)) break;
+    }
+    exit_section_(b, l, m, true, false, null);
+    return true;
   }
 
   /* ********************************************************** */
-  // environment_begin environment_content* environment_end
+  // environment_begin environment_content environment_end
   public static boolean environment_context(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "environment_context")) return false;
     if (!nextTokenIs(b, ENVIRONMENT_BEGIN_TOKEN)) return false;
     boolean r;
     Marker m = enter_section_(b);
     r = environment_begin(b, l + 1);
-    r = r && environment_context_1(b, l + 1);
+    r = r && environment_content(b, l + 1);
     r = r && environment_end(b, l + 1);
     exit_section_(b, m, ENVIRONMENT_CONTEXT, r);
     return r;
   }
 
-  // environment_content*
-  private static boolean environment_context_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "environment_context_1")) return false;
-    while (true) {
-      int c = current_position_(b);
-      if (!environment_content(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "environment_context_1", c)) break;
-    }
-    return true;
-  }
-
   /* ********************************************************** */
-  // "\end" "{" environment_identifier "}"
+  // "\end" "{" ENVIRONMENT_IDENTIFIER "}"
   public static boolean environment_end(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "environment_end")) return false;
     if (!nextTokenIs(b, ENVIRONMENT_END_TOKEN)) return false;
@@ -186,6 +218,71 @@ public class TeXParser implements PsiParser, LightPsiParser {
     r = consumeTokens(b, 0, ENVIRONMENT_END_TOKEN, BRACE_LEFT, ENVIRONMENT_IDENTIFIER, BRACE_RIGHT);
     exit_section_(b, m, ENVIRONMENT_END, r);
     return r;
+  }
+
+  /* ********************************************************** */
+  // generic_element+
+  public static boolean generic_content(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "generic_content")) return false;
+    boolean r;
+    Marker m = enter_section_(b, l, _NONE_, GENERIC_CONTENT, "<generic content>");
+    r = generic_element(b, l + 1);
+    while (r) {
+      int c = current_position_(b);
+      if (!generic_element(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "generic_content", c)) break;
+    }
+    exit_section_(b, l, m, r, false, null);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // generic_content
+  public static boolean generic_context(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "generic_context")) return false;
+    boolean r;
+    Marker m = enter_section_(b, l, _NONE_, GENERIC_CONTEXT, "<generic context>");
+    r = generic_content(b, l + 1);
+    exit_section_(b, l, m, r, false, null);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // group | WORD | COMMAND | brackets | DOLLARS
+  static boolean generic_element(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "generic_element")) return false;
+    boolean r;
+    r = group(b, l + 1);
+    if (!r) r = consumeToken(b, WORD);
+    if (!r) r = consumeToken(b, COMMAND);
+    if (!r) r = brackets(b, l + 1);
+    if (!r) r = consumeToken(b, DOLLARS);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // "{" context* "}"
+  public static boolean group(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "group")) return false;
+    if (!nextTokenIs(b, BRACE_LEFT)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, BRACE_LEFT);
+    r = r && group_1(b, l + 1);
+    r = r && consumeToken(b, BRACE_RIGHT);
+    exit_section_(b, m, GROUP, r);
+    return r;
+  }
+
+  // context*
+  private static boolean group_1(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "group_1")) return false;
+    while (true) {
+      int c = current_position_(b);
+      if (!context(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "group_1", c)) break;
+    }
+    return true;
   }
 
   /* ********************************************************** */
@@ -265,43 +362,137 @@ public class TeXParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // math_group | command | word | environment_context | brackets
-  public static boolean math_element(PsiBuilder b, int l) {
+  // group | COMMAND | WORD | brackets | environment_context
+  static boolean math_element(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "math_element")) return false;
     boolean r;
-    Marker m = enter_section_(b, l, _NONE_, MATH_ELEMENT, "<math element>");
-    r = math_group(b, l + 1);
+    r = group(b, l + 1);
     if (!r) r = consumeToken(b, COMMAND);
     if (!r) r = consumeToken(b, WORD);
+    if (!r) r = brackets(b, l + 1);
     if (!r) r = environment_context(b, l + 1);
-    if (!r) r = consumeToken(b, BRACKETS);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // generic_context?
+  public static boolean newcommand_body(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_body")) return false;
+    Marker m = enter_section_(b, l, _NONE_, NEWCOMMAND_BODY, "<newcommand body>");
+    generic_context(b, l + 1);
+    exit_section_(b, l, m, true, false, null);
+    return true;
+  }
+
+  /* ********************************************************** */
+  // NEWCOMMAND_TOKEN newcommand_name ( "[" newcommand_nargs "]" ("[" newcommand_optarg "]")? )? "{" newcommand_body "}"
+  public static boolean newcommand_context(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_context")) return false;
+    if (!nextTokenIs(b, NEWCOMMAND_TOKEN)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, NEWCOMMAND_TOKEN);
+    r = r && newcommand_name(b, l + 1);
+    r = r && newcommand_context_2(b, l + 1);
+    r = r && consumeToken(b, BRACE_LEFT);
+    r = r && newcommand_body(b, l + 1);
+    r = r && consumeToken(b, BRACE_RIGHT);
+    exit_section_(b, m, NEWCOMMAND_CONTEXT, r);
+    return r;
+  }
+
+  // ( "[" newcommand_nargs "]" ("[" newcommand_optarg "]")? )?
+  private static boolean newcommand_context_2(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_context_2")) return false;
+    newcommand_context_2_0(b, l + 1);
+    return true;
+  }
+
+  // "[" newcommand_nargs "]" ("[" newcommand_optarg "]")?
+  private static boolean newcommand_context_2_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_context_2_0")) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, BRACKET_LEFT);
+    r = r && newcommand_nargs(b, l + 1);
+    r = r && consumeToken(b, BRACKET_RIGHT);
+    r = r && newcommand_context_2_0_3(b, l + 1);
+    exit_section_(b, m, null, r);
+    return r;
+  }
+
+  // ("[" newcommand_optarg "]")?
+  private static boolean newcommand_context_2_0_3(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_context_2_0_3")) return false;
+    newcommand_context_2_0_3_0(b, l + 1);
+    return true;
+  }
+
+  // "[" newcommand_optarg "]"
+  private static boolean newcommand_context_2_0_3_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_context_2_0_3_0")) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, BRACKET_LEFT);
+    r = r && newcommand_optarg(b, l + 1);
+    r = r && consumeToken(b, BRACKET_RIGHT);
+    exit_section_(b, m, null, r);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // "{" COMMAND "}" | COMMAND
+  public static boolean newcommand_name(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_name")) return false;
+    if (!nextTokenIs(b, "<newcommand name>", BRACE_LEFT, COMMAND)) return false;
+    boolean r;
+    Marker m = enter_section_(b, l, _NONE_, NEWCOMMAND_NAME, "<newcommand name>");
+    r = parseTokens(b, 0, BRACE_LEFT, COMMAND, BRACE_RIGHT);
+    if (!r) r = consumeToken(b, COMMAND);
     exit_section_(b, l, m, r, false, null);
     return r;
   }
 
   /* ********************************************************** */
-  // "{" math_element* "}"
-  public static boolean math_group(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "math_group")) return false;
-    if (!nextTokenIs(b, BRACE_LEFT)) return false;
+  // WORD
+  public static boolean newcommand_nargs(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_nargs")) return false;
+    if (!nextTokenIs(b, WORD)) return false;
     boolean r;
     Marker m = enter_section_(b);
-    r = consumeToken(b, BRACE_LEFT);
-    r = r && math_group_1(b, l + 1);
-    r = r && consumeToken(b, BRACE_RIGHT);
-    exit_section_(b, m, MATH_GROUP, r);
+    r = consumeToken(b, WORD);
+    exit_section_(b, m, NEWCOMMAND_NARGS, r);
     return r;
   }
 
-  // math_element*
-  private static boolean math_group_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "math_group_1")) return false;
+  /* ********************************************************** */
+  // (group | WORD | COMMAND | "(" | ")" | "["  | DOLLARS)*
+  public static boolean newcommand_optarg(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_optarg")) return false;
+    Marker m = enter_section_(b, l, _NONE_, NEWCOMMAND_OPTARG, "<newcommand optarg>");
     while (true) {
       int c = current_position_(b);
-      if (!math_element(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "math_group_1", c)) break;
+      if (!newcommand_optarg_0(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "newcommand_optarg", c)) break;
     }
+    exit_section_(b, l, m, true, false, null);
     return true;
+  }
+
+  // group | WORD | COMMAND | "(" | ")" | "["  | DOLLARS
+  private static boolean newcommand_optarg_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "newcommand_optarg_0")) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = group(b, l + 1);
+    if (!r) r = consumeToken(b, WORD);
+    if (!r) r = consumeToken(b, COMMAND);
+    if (!r) r = consumeToken(b, PARENTHESES_LEFT);
+    if (!r) r = consumeToken(b, PARENTHESES_RIGHT);
+    if (!r) r = consumeToken(b, BRACKET_LEFT);
+    if (!r) r = consumeToken(b, DOLLARS);
+    exit_section_(b, m, null, r);
+    return r;
   }
 
   /* ********************************************************** */
@@ -321,60 +512,26 @@ public class TeXParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // text_content+
+  // text_content
   public static boolean text_context(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "text_context")) return false;
     boolean r;
     Marker m = enter_section_(b, l, _NONE_, TEXT_CONTEXT, "<text context>");
     r = text_content(b, l + 1);
-    while (r) {
-      int c = current_position_(b);
-      if (!text_content(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "text_context", c)) break;
-    }
     exit_section_(b, l, m, r, false, null);
     return r;
   }
 
   /* ********************************************************** */
-  // text_group | word | command | environment_context | math_context | brackets
-  public static boolean text_element(PsiBuilder b, int l) {
+  // group | WORD | COMMAND | brackets
+  static boolean text_element(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "text_element")) return false;
     boolean r;
-    Marker m = enter_section_(b, l, _NONE_, TEXT_ELEMENT, "<text element>");
-    r = text_group(b, l + 1);
+    r = group(b, l + 1);
     if (!r) r = consumeToken(b, WORD);
     if (!r) r = consumeToken(b, COMMAND);
-    if (!r) r = environment_context(b, l + 1);
-    if (!r) r = math_context(b, l + 1);
-    if (!r) r = consumeToken(b, BRACKETS);
-    exit_section_(b, l, m, r, false, null);
+    if (!r) r = brackets(b, l + 1);
     return r;
-  }
-
-  /* ********************************************************** */
-  // "{" text_element* "}"
-  public static boolean text_group(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "text_group")) return false;
-    if (!nextTokenIs(b, BRACE_LEFT)) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, BRACE_LEFT);
-    r = r && text_group_1(b, l + 1);
-    r = r && consumeToken(b, BRACE_RIGHT);
-    exit_section_(b, m, TEXT_GROUP, r);
-    return r;
-  }
-
-  // text_element*
-  private static boolean text_group_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "text_group_1")) return false;
-    while (true) {
-      int c = current_position_(b);
-      if (!text_element(b, l + 1)) break;
-      if (!empty_element_parsed_guard_(b, "text_group_1", c)) break;
-    }
-    return true;
   }
 
 }

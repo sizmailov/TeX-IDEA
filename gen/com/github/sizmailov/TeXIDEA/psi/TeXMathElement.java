@@ -8,10 +8,10 @@ import com.intellij.psi.PsiElement;
 public interface TeXMathElement extends PsiElement {
 
   @Nullable
-  TeXEnvironmentContext getEnvironmentContext();
+  TeXBrackets getBrackets();
 
   @Nullable
-  TeXMathGroup getMathGroup();
+  TeXGroup getGroup();
 
   @Nullable
   PsiElement getCommand();

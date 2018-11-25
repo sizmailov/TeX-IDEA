@@ -5,7 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface TeXEnvironmentContent extends PsiElement {
+public interface TeXGroup extends PsiElement {
 
   @NotNull
   List<TeXCommentContext> getCommentContextList();

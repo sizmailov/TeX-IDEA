@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXEnvironmentContextImpl extends ASTWrapperPsiElement implements TeXEnvironmentContext {
+public class TeXNewcommandContextImpl extends ASTWrapperPsiElement implements TeXNewcommandContext {
 
-  public TeXEnvironmentContextImpl(@NotNull ASTNode node) {
+  public TeXNewcommandContextImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitEnvironmentContext(this);
+    visitor.visitNewcommandContext(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {
@@ -28,20 +28,32 @@ public class TeXEnvironmentContextImpl extends ASTWrapperPsiElement implements T
 
   @Override
   @NotNull
-  public TeXEnvironmentBegin getEnvironmentBegin() {
-    return findNotNullChildByClass(TeXEnvironmentBegin.class);
+  public TeXNewcommandBody getNewcommandBody() {
+    return findNotNullChildByClass(TeXNewcommandBody.class);
   }
 
   @Override
   @NotNull
-  public TeXEnvironmentContent getEnvironmentContent() {
-    return findNotNullChildByClass(TeXEnvironmentContent.class);
+  public TeXNewcommandName getNewcommandName() {
+    return findNotNullChildByClass(TeXNewcommandName.class);
+  }
+
+  @Override
+  @Nullable
+  public TeXNewcommandNargs getNewcommandNargs() {
+    return findChildByClass(TeXNewcommandNargs.class);
+  }
+
+  @Override
+  @Nullable
+  public TeXNewcommandOptarg getNewcommandOptarg() {
+    return findChildByClass(TeXNewcommandOptarg.class);
   }
 
   @Override
   @NotNull
-  public TeXEnvironmentEnd getEnvironmentEnd() {
-    return findNotNullChildByClass(TeXEnvironmentEnd.class);
+  public PsiElement getNewcommandToken() {
+    return findNotNullChildByType(NEWCOMMAND_TOKEN);
   }
 
 }

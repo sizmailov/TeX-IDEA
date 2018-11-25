@@ -28,20 +28,25 @@ public class TeXLexer implements FlexLexer {
 
   /** lexical states */
   public static final int YYINITIAL = 0;
-  public static final int WITHIN_ENVIRONMENT = 2;
-  public static final int WITHIN_TEXT_GROUP = 4;
-  public static final int WITHIN_MATH_GROUP = 6;
-  public static final int WITHIN_COMMENT = 8;
-  public static final int WITHIN_INLINE_MATH_DOLLAR = 10;
-  public static final int WITHIN_INLINE_MATH_PARENTHESES = 12;
-  public static final int WITHIN_DISPLAY_MATH_DOLLAR = 14;
-  public static final int WITHIN_DISPLAY_MATH_PARENTHESES = 16;
-  public static final int EXPECT_ENV_BEGIN_OPEN_BRACE = 18;
-  public static final int EXPECT_ENV_BEGIN_CLOSE_BRACE = 20;
-  public static final int EXPECT_ENV_BEGIN_ID = 22;
-  public static final int EXPECT_ENV_END_OPEN_BRACE = 24;
-  public static final int EXPECT_ENV_END_CLOSE_BRACE = 26;
-  public static final int EXPECT_ENV_END_ID = 28;
+  public static final int WITHIN_GROUP = 2;
+  public static final int WITHIN_GENERIC_CONTEXT = 4;
+  public static final int EXPECT_NEWCOMMAND_NAME = 6;
+  public static final int EXPECT_NEWCOMMAND_NARGS = 8;
+  public static final int EXPECT_NEWCOMMAND_OPTARG = 10;
+  public static final int EXPECT_NEWCOMMAND_BODY = 12;
+  public static final int WITHIN_NEWCOMMAND_OPTARG = 14;
+  public static final int WITHIN_NEWCOMMAND_BODY = 16;
+  public static final int WITHIN_INLINE_MATH_DOLLAR = 18;
+  public static final int WITHIN_INLINE_MATH_PARENTHESES = 20;
+  public static final int WITHIN_DISPLAY_MATH_DOLLAR = 22;
+  public static final int WITHIN_DISPLAY_MATH_PARENTHESES = 24;
+  public static final int WITHIN_ENV = 26;
+  public static final int EXPECT_ENV_BEGIN_OPEN_BRACE = 28;
+  public static final int EXPECT_ENV_BEGIN_ID = 30;
+  public static final int EXPECT_ENV_BEGIN_CLOSE_BRACE = 32;
+  public static final int EXPECT_ENV_END_OPEN_BRACE = 34;
+  public static final int EXPECT_ENV_END_ID = 36;
+  public static final int EXPECT_ENV_END_CLOSE_BRACE = 38;
 
   /**
    * ZZ_LEXSTATE[l] is the state in the DFA for the lexical state l
@@ -51,7 +56,8 @@ public class TeXLexer implements FlexLexer {
    */
   private static final int ZZ_LEXSTATE[] = { 
      0,  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7, 
-     8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14
+     8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 
+    16, 16, 17, 17, 18, 18, 19, 19
   };
 
   /** 
@@ -73,10 +79,10 @@ public class TeXLexer implements FlexLexer {
 
   /* The ZZ_CMAP_A table has 640 entries */
   static final char ZZ_CMAP_A[] = zzUnpackCMap(
-    "\11\0\1\3\1\2\2\1\1\2\22\0\1\3\3\0\1\11\1\7\2\0\1\13\1\6\26\0\33\5\1\12\1"+
-    "\4\1\14\3\0\1\5\1\21\1\5\1\17\1\15\1\5\1\22\1\5\1\23\4\5\1\16\14\5\1\20\1"+
-    "\0\1\10\7\0\1\1\32\0\1\3\337\0\1\3\177\0\13\3\35\0\2\1\5\0\1\3\57\0\1\3\40"+
-    "\0");
+    "\11\0\1\3\1\2\2\1\1\2\22\0\1\3\3\0\1\4\1\22\2\0\1\25\1\7\1\21\25\0\33\6\1"+
+    "\24\1\5\1\26\3\0\1\17\1\30\1\14\1\20\1\11\1\6\1\31\1\6\1\32\3\6\1\16\1\12"+
+    "\1\15\2\6\1\10\4\6\1\13\3\6\1\27\1\0\1\23\7\0\1\1\32\0\1\3\337\0\1\3\177\0"+
+    "\13\3\35\0\2\1\5\0\1\3\57\0\1\3\40\0");
 
   /** 
    * Translates DFA states to action switch labels.
@@ -84,14 +90,16 @@ public class TeXLexer implements FlexLexer {
   private static final int [] ZZ_ACTION = zzUnpackAction();
 
   private static final String ZZ_ACTION_PACKED_0 =
-    "\17\0\1\1\1\2\1\3\1\4\1\5\1\3\1\6"+
-    "\1\7\1\3\1\10\1\3\1\11\1\12\1\13\3\3"+
-    "\1\14\1\15\1\16\1\17\1\20\1\21\2\22\1\23"+
-    "\1\24\1\22\1\25\1\22\1\26\1\27\1\30\3\22"+
-    "\1\31\1\22\1\32";
+    "\24\0\1\1\1\2\1\3\1\4\1\5\1\6\1\4"+
+    "\1\7\1\10\1\11\1\12\1\13\1\14\2\4\1\15"+
+    "\1\16\1\17\1\20\1\21\1\22\1\23\1\24\1\25"+
+    "\1\26\1\27\1\30\1\31\5\4\1\32\1\33\1\34"+
+    "\1\35\1\36\1\37\1\40\4\41\1\42\1\43\1\41"+
+    "\2\44\1\45\1\46\1\47\7\41\1\50\3\41\1\51"+
+    "\4\41\2\52";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[54];
+    int [] result = new int[90];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -116,16 +124,21 @@ public class TeXLexer implements FlexLexer {
   private static final int [] ZZ_ROWMAP = zzUnpackRowMap();
 
   private static final String ZZ_ROWMAP_PACKED_0 =
-    "\0\0\0\24\0\50\0\74\0\120\0\144\0\170\0\214"+
-    "\0\240\0\264\0\310\0\334\0\360\0\u0104\0\u0118\0\u012c"+
-    "\0\u0140\0\u0154\0\u0168\0\u017c\0\u0168\0\u0190\0\u0168\0\u01a4"+
-    "\0\u0168\0\u01b8\0\u0168\0\u0168\0\u0168\0\u01cc\0\u01e0\0\u01f4"+
-    "\0\u0168\0\u0168\0\u0208\0\u0168\0\u0168\0\u021c\0\u0168\0\u0230"+
-    "\0\u0168\0\u0168\0\u0244\0\u0168\0\u0258\0\u0168\0\u0168\0\u0168"+
-    "\0\u026c\0\u0280\0\u0294\0\u0230\0\u02a8\0\u0230";
+    "\0\0\0\33\0\66\0\121\0\154\0\207\0\242\0\275"+
+    "\0\330\0\363\0\u010e\0\u0129\0\u0144\0\u015f\0\u017a\0\u0195"+
+    "\0\u01b0\0\u01cb\0\u01e6\0\u0201\0\u021c\0\u0237\0\u0252\0\u026d"+
+    "\0\u0288\0\u02a3\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288"+
+    "\0\u02be\0\u02d9\0\u02f4\0\u0288\0\u0288\0\u0288\0\u030f\0\u0288"+
+    "\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288\0\u0288"+
+    "\0\u032a\0\u0345\0\u0360\0\u037b\0\u0396\0\u0288\0\u03b1\0\u0288"+
+    "\0\u0288\0\u03cc\0\u0288\0\u02be\0\u0288\0\u03e7\0\u0402\0\u041d"+
+    "\0\u0288\0\u0288\0\u0438\0\u0288\0\u0453\0\u0288\0\u0288\0\u0288"+
+    "\0\u046e\0\u0489\0\u04a4\0\u04bf\0\u04da\0\u04f5\0\u0510\0\u03e7"+
+    "\0\u052b\0\u0546\0\u0561\0\u03e7\0\u057c\0\u0597\0\u05b2\0\u05cd"+
+    "\0\u05e8\0\u0288";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[54];
+    int [] result = new int[90];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -148,41 +161,66 @@ public class TeXLexer implements FlexLexer {
   private static final int [] ZZ_TRANS = zzUnpackTrans();
 
   private static final String ZZ_TRANS_PACKED_0 =
-    "\1\20\3\21\1\22\1\20\1\23\1\24\1\25\1\26"+
-    "\3\23\3\20\1\27\4\20\3\21\1\30\1\20\1\23"+
-    "\1\24\1\25\1\26\3\23\3\20\1\27\4\20\3\21"+
-    "\1\22\1\20\1\23\1\24\1\31\1\26\3\23\3\20"+
-    "\1\27\4\20\3\21\1\32\1\20\1\23\1\24\1\33"+
-    "\1\25\3\23\3\20\1\34\3\20\24\25\1\20\3\21"+
-    "\1\32\1\20\1\23\1\24\1\25\1\35\3\23\3\20"+
-    "\1\34\4\20\3\21\1\36\1\20\1\23\1\24\2\25"+
-    "\3\23\3\20\1\34\4\20\3\21\1\32\1\20\1\23"+
-    "\1\24\1\25\1\37\3\23\3\20\1\34\4\20\3\21"+
-    "\1\40\1\20\1\23\1\24\2\25\3\23\3\20\1\34"+
-    "\4\20\3\21\1\32\1\20\1\23\1\24\2\25\3\23"+
-    "\3\20\1\41\3\20\10\25\1\42\13\25\10\43\2\25"+
-    "\6\43\1\25\3\43\20\25\1\44\13\25\1\45\13\25"+
-    "\10\46\2\25\6\46\1\25\3\46\1\20\4\0\1\20"+
-    "\7\0\3\20\1\0\3\20\1\0\3\21\20\0\1\47"+
-    "\2\0\2\47\1\50\4\47\1\51\1\52\1\47\3\50"+
-    "\1\47\1\53\2\50\24\0\2\24\1\0\21\24\11\0"+
-    "\1\54\12\0\1\47\2\0\2\47\1\50\4\47\1\51"+
-    "\1\52\1\47\1\55\2\50\1\47\1\53\2\50\1\47"+
-    "\2\0\2\47\1\50\7\47\3\50\1\47\1\53\2\50"+
-    "\1\47\2\0\2\47\1\50\1\56\6\47\3\50\1\47"+
-    "\1\53\2\50\11\0\1\57\12\0\1\47\2\0\2\47"+
-    "\1\50\6\47\1\60\3\50\1\47\1\53\2\50\10\43"+
-    "\2\0\6\43\1\0\3\43\10\46\2\0\6\46\1\0"+
-    "\3\46\5\0\1\50\7\0\3\50\1\0\3\50\5\0"+
-    "\1\50\7\0\1\61\2\50\1\0\3\50\5\0\1\50"+
-    "\7\0\1\50\1\62\1\50\1\0\3\50\5\0\1\50"+
-    "\7\0\3\50\1\0\1\50\1\63\1\50\5\0\1\50"+
-    "\7\0\2\50\1\64\1\0\3\50\5\0\1\50\7\0"+
-    "\3\50\1\0\2\50\1\65\5\0\1\50\7\0\1\50"+
-    "\1\66\1\50\1\0\3\50";
+    "\1\25\3\26\1\27\1\30\1\25\1\31\12\25\1\32"+
+    "\1\33\1\34\1\35\1\36\1\37\4\25\3\26\1\27"+
+    "\1\30\1\25\1\31\12\25\1\32\1\40\1\34\1\35"+
+    "\1\36\1\37\4\25\3\26\1\41\1\42\1\25\1\31"+
+    "\12\25\1\32\1\33\1\34\1\35\1\36\1\37\3\25"+
+    "\1\33\3\26\1\33\1\43\15\33\1\44\1\45\2\33"+
+    "\1\46\3\33\1\47\3\26\2\33\1\47\1\33\12\47"+
+    "\2\33\1\50\1\33\1\51\1\52\3\47\1\33\3\26"+
+    "\20\33\1\53\2\33\1\54\4\33\3\26\23\33\1\55"+
+    "\3\33\1\25\3\26\1\33\1\42\1\25\1\31\12\25"+
+    "\1\32\1\33\1\34\1\35\1\56\1\37\4\25\3\26"+
+    "\1\33\1\42\1\25\1\31\12\25\1\32\1\57\1\34"+
+    "\1\35\1\36\1\37\4\25\3\26\1\60\1\61\1\25"+
+    "\1\31\12\25\1\32\1\33\1\34\1\35\1\36\1\37"+
+    "\3\25\5\33\1\62\25\33\1\25\3\26\1\63\1\61"+
+    "\1\25\1\31\12\25\1\32\1\33\1\34\1\35\1\36"+
+    "\1\37\4\25\3\26\1\33\1\64\1\25\1\31\12\25"+
+    "\1\32\1\33\1\34\1\35\1\36\1\37\4\25\3\26"+
+    "\1\27\1\65\1\25\1\31\12\25\1\32\1\33\1\34"+
+    "\1\35\1\36\1\37\3\25\27\33\1\66\3\33\4\67"+
+    "\1\33\16\67\1\33\3\67\1\33\3\67\23\33\1\70"+
+    "\36\33\1\71\3\33\4\72\1\33\16\72\1\33\3\72"+
+    "\1\33\3\72\23\33\1\73\7\33\1\25\5\0\1\25"+
+    "\1\0\12\25\6\0\3\25\1\0\3\26\33\0\1\74"+
+    "\26\0\1\75\1\0\4\75\1\76\1\75\1\77\1\76"+
+    "\1\100\6\76\3\75\1\101\1\102\2\75\1\103\2\76"+
+    "\33\0\2\32\1\0\30\32\4\0\1\41\26\0\1\75"+
+    "\1\0\4\75\1\76\1\75\11\76\7\75\3\76\1\104"+
+    "\1\0\4\104\1\105\1\104\11\105\7\104\3\105\1\47"+
+    "\5\0\1\47\1\0\12\47\6\0\3\47\1\75\1\0"+
+    "\4\75\1\76\1\75\1\77\1\76\1\100\6\76\7\75"+
+    "\1\103\2\76\7\0\1\106\27\0\1\107\26\0\1\75"+
+    "\1\0\4\75\1\76\1\75\1\77\1\76\1\100\6\76"+
+    "\5\75\1\110\1\75\1\103\2\76\1\75\1\0\4\75"+
+    "\1\76\1\75\1\77\1\111\1\100\6\76\3\75\1\101"+
+    "\1\102\2\75\1\103\2\76\4\67\1\0\16\67\1\0"+
+    "\3\67\1\0\3\67\4\72\1\0\16\72\1\0\3\72"+
+    "\1\0\3\72\6\0\1\76\1\0\11\76\7\0\3\76"+
+    "\6\0\1\76\1\0\1\76\1\112\7\76\7\0\3\76"+
+    "\6\0\1\76\1\0\1\76\1\113\7\76\7\0\3\76"+
+    "\6\0\1\76\1\0\1\76\1\114\7\76\7\0\3\76"+
+    "\6\0\1\105\1\0\11\105\7\0\3\105\6\0\1\76"+
+    "\1\0\2\76\1\115\6\76\7\0\3\76\6\0\1\76"+
+    "\1\0\2\76\1\100\6\76\7\0\3\76\6\0\1\76"+
+    "\1\0\3\76\1\116\5\76\7\0\3\76\6\0\1\76"+
+    "\1\0\11\76\7\0\1\76\1\117\1\76\6\0\1\76"+
+    "\1\0\10\76\1\120\7\0\3\76\6\0\1\76\1\0"+
+    "\4\76\1\121\4\76\7\0\3\76\6\0\1\76\1\0"+
+    "\11\76\7\0\2\76\1\122\6\0\1\76\1\0\5\76"+
+    "\1\123\3\76\7\0\3\76\6\0\1\76\1\0\2\76"+
+    "\1\124\6\76\7\0\3\76\6\0\1\76\1\0\6\76"+
+    "\1\125\2\76\7\0\3\76\6\0\1\76\1\0\6\76"+
+    "\1\126\2\76\7\0\3\76\6\0\1\76\1\0\7\76"+
+    "\1\127\1\76\7\0\3\76\6\0\1\76\1\0\2\76"+
+    "\1\130\6\76\7\0\3\76\6\0\1\76\1\0\10\76"+
+    "\1\131\7\0\3\76\6\0\1\76\1\0\11\76\1\132"+
+    "\6\0\3\76";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[700];
+    int [] result = new int[1539];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -220,12 +258,13 @@ public class TeXLexer implements FlexLexer {
   private static final int [] ZZ_ATTRIBUTE = zzUnpackAttribute();
 
   private static final String ZZ_ATTRIBUTE_PACKED_0 =
-    "\17\0\3\1\1\11\1\1\1\11\1\1\1\11\1\1"+
-    "\1\11\1\1\3\11\3\1\2\11\1\1\2\11\1\1"+
-    "\1\11\1\1\2\11\1\1\1\11\1\1\3\11\6\1";
+    "\24\0\4\1\1\11\1\1\6\11\3\1\3\11\1\1"+
+    "\11\11\5\1\1\11\1\1\2\11\1\1\1\11\1\1"+
+    "\1\11\3\1\2\11\1\1\1\11\1\1\3\11\21\1"+
+    "\1\11";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[54];
+    int [] result = new int[90];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -544,135 +583,215 @@ public class TeXLexer implements FlexLexer {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1: 
-            { log("<word>");  return WORD;
+            { log("<word>"); return WORD;
             } 
             // fall through
-          case 27: break;
+          case 43: break;
           case 2: 
             { log("<space>"); return WHITE_SPACE;
             } 
             // fall through
-          case 28: break;
+          case 44: break;
           case 3: 
-            { return BAD_CHARACTER;
-            } 
-            // fall through
-          case 29: break;
-          case 4: 
-            { log("[]()"); return BRACKETS;
-            } 
-            // fall through
-          case 30: break;
-          case 5: 
-            { log("<comment>"); return COMMENT_CONTEXT;
-            } 
-            // fall through
-          case 31: break;
-          case 6: 
             { log("$ in "); yypushState(WITHIN_INLINE_MATH_DOLLAR); return INLINE_MATH_DOLLAR;
             } 
             // fall through
-          case 32: break;
-          case 7: 
-            { log("text group in {"); yypushState(WITHIN_TEXT_GROUP); return BRACE_LEFT;
-            } 
-            // fall through
-          case 33: break;
-          case 8: 
-            { log("text group out }"); yypopState(); return BRACE_RIGHT;
-            } 
-            // fall through
-          case 34: break;
-          case 9: 
-            { log("math group out }"); yypopState(); return BRACE_RIGHT;
-            } 
-            // fall through
-          case 35: break;
-          case 10: 
-            { log("math group in {"); yypushState(WITHIN_MATH_GROUP); return BRACE_LEFT;
-            } 
-            // fall through
-          case 36: break;
-          case 11: 
-            { log("$ out");yypopState(); return INLINE_MATH_DOLLAR;
-            } 
-            // fall through
-          case 37: break;
-          case 12: 
-            { log("env in {");  yybegin(EXPECT_ENV_BEGIN_ID); return BRACE_LEFT;
-            } 
-            // fall through
-          case 38: break;
-          case 13: 
-            { log("env in }"); yybegin(WITHIN_ENVIRONMENT); return BRACE_RIGHT;
-            } 
-            // fall through
-          case 39: break;
-          case 14: 
-            { log("env in <id>"); yybegin(EXPECT_ENV_BEGIN_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER;
-            } 
-            // fall through
-          case 40: break;
-          case 15: 
-            { log("env out {"); yybegin(EXPECT_ENV_END_ID); return BRACE_LEFT;
-            } 
-            // fall through
-          case 41: break;
-          case 16: 
-            { log("env out }"); yypopState(); return BRACE_RIGHT;
-            } 
-            // fall through
-          case 42: break;
-          case 17: 
-            { log("env out <id>"); yybegin(EXPECT_ENV_END_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER;
-            } 
-            // fall through
-          case 43: break;
-          case 18: 
-            { log("<command>");  return COMMAND;
-            } 
-            // fall through
-          case 44: break;
-          case 19: 
-            { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES;
-            } 
-            // fall through
           case 45: break;
-          case 20: 
-            { log("\\( in ");yypushState(WITHIN_INLINE_MATH_PARENTHESES); return INLINE_MATH_BEGIN_PARENTHESES;
+          case 4: 
+            { return BAD_CHARACTER;
             } 
             // fall through
           case 46: break;
-          case 21: 
-            { log("$$ in "); yypushState(WITHIN_DISPLAY_MATH_DOLLAR); return DISPLAY_MATH_DOLLAR;
+          case 5: 
+            { log(")");  return PARENTHESES_RIGHT;
             } 
             // fall through
           case 47: break;
-          case 22: 
-            { log("\\) out"); yypopState(); return INLINE_MATH_END_PARENTHESES;
+          case 6: 
+            { log("<comment>"); return COMMENT_CONTEXT;
             } 
             // fall through
           case 48: break;
-          case 23: 
-            { log("$$ out");yypopState(); return DISPLAY_MATH_DOLLAR;
+          case 7: 
+            { log("[");  return BRACKET_LEFT;
             } 
             // fall through
           case 49: break;
-          case 24: 
-            { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES;
+          case 8: 
+            { log("(");  return PARENTHESES_LEFT;
             } 
             // fall through
           case 50: break;
-          case 25: 
-            { log("env out"); yybegin(EXPECT_ENV_END_OPEN_BRACE); return ENVIRONMENT_END_TOKEN;
+          case 9: 
+            { log("]");  return BRACKET_RIGHT;
             } 
             // fall through
           case 51: break;
-          case 26: 
-            { log("env in"); yypushState(EXPECT_ENV_BEGIN_OPEN_BRACE); return ENVIRONMENT_BEGIN_TOKEN;
+          case 10: 
+            { log("text group in {"); yypushState(WITHIN_GROUP); return BRACE_LEFT;
             } 
             // fall through
           case 52: break;
+          case 11: 
+            { log("text group out }"); yypopState(); return BRACE_RIGHT;
+            } 
+            // fall through
+          case 53: break;
+          case 12: 
+            { log("<dollars>"); return DOLLARS;
+            } 
+            // fall through
+          case 54: break;
+          case 13: 
+            { log("new cmd name }"); yybegin(EXPECT_NEWCOMMAND_NARGS); return BRACE_RIGHT;
+            } 
+            // fall through
+          case 55: break;
+          case 14: 
+            { log("new cmd name [");  yybegin(EXPECT_NEWCOMMAND_NARGS); return BRACKET_LEFT;
+            } 
+            // fall through
+          case 56: break;
+          case 15: 
+            { log("new cmd name {"); return BRACE_LEFT;
+            } 
+            // fall through
+          case 57: break;
+          case 16: 
+            { log("new cmd nargs <id>"); return WORD;
+            } 
+            // fall through
+          case 58: break;
+          case 17: 
+            { log("new cmd nargs [");  return BRACKET_LEFT;
+            } 
+            // fall through
+          case 59: break;
+          case 18: 
+            { log("new cmd nargs ]"); yybegin(EXPECT_NEWCOMMAND_OPTARG); return BRACKET_RIGHT;
+            } 
+            // fall through
+          case 60: break;
+          case 19: 
+            { log("new cmd nargs ]"); yybegin(WITHIN_NEWCOMMAND_BODY); return BRACE_LEFT;
+            } 
+            // fall through
+          case 61: break;
+          case 20: 
+            { log("new command optarg [");  yybegin(WITHIN_NEWCOMMAND_OPTARG); return BRACKET_LEFT;
+            } 
+            // fall through
+          case 62: break;
+          case 21: 
+            { log("new command optarg {"); yybegin(WITHIN_NEWCOMMAND_BODY); return BRACE_LEFT;
+            } 
+            // fall through
+          case 63: break;
+          case 22: 
+            { log("new command body {"); yybegin(WITHIN_NEWCOMMAND_BODY); return BRACE_LEFT;
+            } 
+            // fall through
+          case 64: break;
+          case 23: 
+            { log("]"); yybegin(EXPECT_NEWCOMMAND_BODY); return BRACKET_RIGHT;
+            } 
+            // fall through
+          case 65: break;
+          case 24: 
+            { log("}"); yypopState(); return BRACE_RIGHT;
+            } 
+            // fall through
+          case 66: break;
+          case 25: 
+            { log("$ out");yypopState(); return INLINE_MATH_DOLLAR;
+            } 
+            // fall through
+          case 67: break;
+          case 26: 
+            { log("env in {");  yybegin(EXPECT_ENV_BEGIN_ID); return BRACE_LEFT;
+            } 
+            // fall through
+          case 68: break;
+          case 27: 
+            { log("env in <id>"); yybegin(EXPECT_ENV_BEGIN_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER;
+            } 
+            // fall through
+          case 69: break;
+          case 28: 
+            { log("env in }"); yybegin(WITHIN_ENV); return BRACE_RIGHT;
+            } 
+            // fall through
+          case 70: break;
+          case 29: 
+            { log("env out {"); yybegin(EXPECT_ENV_END_ID); return BRACE_LEFT;
+            } 
+            // fall through
+          case 71: break;
+          case 30: 
+            { log("env out <id>"); yybegin(EXPECT_ENV_END_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER;
+            } 
+            // fall through
+          case 72: break;
+          case 31: 
+            { log("env out }"); yypopState(); return BRACE_RIGHT;
+            } 
+            // fall through
+          case 73: break;
+          case 32: 
+            { log("$$ in "); yypushState(WITHIN_DISPLAY_MATH_DOLLAR); return DISPLAY_MATH_DOLLAR;
+            } 
+            // fall through
+          case 74: break;
+          case 33: 
+            { log("<command>");  return COMMAND;
+            } 
+            // fall through
+          case 75: break;
+          case 34: 
+            { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES;
+            } 
+            // fall through
+          case 76: break;
+          case 35: 
+            { log("\\( in ");yypushState(WITHIN_INLINE_MATH_PARENTHESES); return INLINE_MATH_BEGIN_PARENTHESES;
+            } 
+            // fall through
+          case 77: break;
+          case 36: 
+            { log("new cmd name <name>"); return COMMAND;
+            } 
+            // fall through
+          case 78: break;
+          case 37: 
+            { log("\\) out"); yypopState(); return INLINE_MATH_END_PARENTHESES;
+            } 
+            // fall through
+          case 79: break;
+          case 38: 
+            { log("$$ out");yypopState(); return DISPLAY_MATH_DOLLAR;
+            } 
+            // fall through
+          case 80: break;
+          case 39: 
+            { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES;
+            } 
+            // fall through
+          case 81: break;
+          case 40: 
+            { log("env out"); yybegin(EXPECT_ENV_END_OPEN_BRACE); return ENVIRONMENT_END_TOKEN;
+            } 
+            // fall through
+          case 82: break;
+          case 41: 
+            { log("env in"); yypushState(EXPECT_ENV_BEGIN_OPEN_BRACE); return ENVIRONMENT_BEGIN_TOKEN;
+            } 
+            // fall through
+          case 83: break;
+          case 42: 
+            { log("new cmd in"); yypushState(EXPECT_NEWCOMMAND_NAME); return NEWCOMMAND_TOKEN;
+            } 
+            // fall through
+          case 84: break;
           default:
             zzScanError(ZZ_NO_MATCH);
           }

@@ -28,8 +28,14 @@ public class TeXMathContentImpl extends ASTWrapperPsiElement implements TeXMathC
 
   @Override
   @NotNull
-  public List<TeXMathElement> getMathElementList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXMathElement.class);
+  public List<TeXEnvironmentContext> getEnvironmentContextList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXEnvironmentContext.class);
+  }
+
+  @Override
+  @NotNull
+  public List<TeXGroup> getGroupList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXGroup.class);
   }
 
 }

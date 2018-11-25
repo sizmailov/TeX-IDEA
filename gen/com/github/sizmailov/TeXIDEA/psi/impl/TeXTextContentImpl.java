@@ -28,8 +28,8 @@ public class TeXTextContentImpl extends ASTWrapperPsiElement implements TeXTextC
 
   @Override
   @NotNull
-  public List<TeXTextElement> getTextElementList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXTextElement.class);
+  public List<TeXGroup> getGroupList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXGroup.class);
   }
 
 }

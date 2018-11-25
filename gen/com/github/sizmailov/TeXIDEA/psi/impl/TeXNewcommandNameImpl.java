@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXEnvironmentContextImpl extends ASTWrapperPsiElement implements TeXEnvironmentContext {
+public class TeXNewcommandNameImpl extends ASTWrapperPsiElement implements TeXNewcommandName {
 
-  public TeXEnvironmentContextImpl(@NotNull ASTNode node) {
+  public TeXNewcommandNameImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitEnvironmentContext(this);
+    visitor.visitNewcommandName(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {
@@ -28,20 +28,8 @@ public class TeXEnvironmentContextImpl extends ASTWrapperPsiElement implements T
 
   @Override
   @NotNull
-  public TeXEnvironmentBegin getEnvironmentBegin() {
-    return findNotNullChildByClass(TeXEnvironmentBegin.class);
-  }
-
-  @Override
-  @NotNull
-  public TeXEnvironmentContent getEnvironmentContent() {
-    return findNotNullChildByClass(TeXEnvironmentContent.class);
-  }
-
-  @Override
-  @NotNull
-  public TeXEnvironmentEnd getEnvironmentEnd() {
-    return findNotNullChildByClass(TeXEnvironmentEnd.class);
+  public PsiElement getCommand() {
+    return findNotNullChildByType(COMMAND);
   }
 
 }

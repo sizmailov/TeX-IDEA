@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXMathElementImpl extends ASTWrapperPsiElement implements TeXMathElement {
+public class TeXGenericContextImpl extends ASTWrapperPsiElement implements TeXGenericContext {
 
-  public TeXMathElementImpl(@NotNull ASTNode node) {
+  public TeXGenericContextImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitMathElement(this);
+    visitor.visitGenericContext(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {
@@ -27,27 +27,9 @@ public class TeXMathElementImpl extends ASTWrapperPsiElement implements TeXMathE
   }
 
   @Override
-  @Nullable
-  public TeXEnvironmentContext getEnvironmentContext() {
-    return findChildByClass(TeXEnvironmentContext.class);
-  }
-
-  @Override
-  @Nullable
-  public TeXMathGroup getMathGroup() {
-    return findChildByClass(TeXMathGroup.class);
-  }
-
-  @Override
-  @Nullable
-  public PsiElement getCommand() {
-    return findChildByType(COMMAND);
-  }
-
-  @Override
-  @Nullable
-  public PsiElement getWord() {
-    return findChildByType(WORD);
+  @NotNull
+  public TeXGenericContent getGenericContent() {
+    return findNotNullChildByClass(TeXGenericContent.class);
   }
 
 }

@@ -5,9 +5,9 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface TeXTextContext extends PsiElement {
+public interface TeXNewcommandBody extends PsiElement {
 
-  @NotNull
-  TeXTextContent getTextContent();
+  @Nullable
+  TeXGenericContext getGenericContext();
 
 }

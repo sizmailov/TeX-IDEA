@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXEnvironmentContentImpl extends ASTWrapperPsiElement implements TeXEnvironmentContent {
+public class TeXGroupImpl extends ASTWrapperPsiElement implements TeXGroup {
 
-  public TeXEnvironmentContentImpl(@NotNull ASTNode node) {
+  public TeXGroupImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitEnvironmentContent(this);
+    visitor.visitGroup(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {

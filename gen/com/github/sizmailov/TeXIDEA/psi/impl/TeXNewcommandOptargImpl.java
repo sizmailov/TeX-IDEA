@@ -11,14 +11,14 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.github.sizmailov.TeXIDEA.psi.*;
 
-public class TeXContextImpl extends ASTWrapperPsiElement implements TeXContext {
+public class TeXNewcommandOptargImpl extends ASTWrapperPsiElement implements TeXNewcommandOptarg {
 
-  public TeXContextImpl(@NotNull ASTNode node) {
+  public TeXNewcommandOptargImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull TeXVisitor visitor) {
-    visitor.visitContext(this);
+    visitor.visitNewcommandOptarg(this);
   }
 
   public void accept(@NotNull PsiElementVisitor visitor) {
@@ -27,15 +27,9 @@ public class TeXContextImpl extends ASTWrapperPsiElement implements TeXContext {
   }
 
   @Override
-  @Nullable
-  public TeXTextContext getTextContext() {
-    return findChildByClass(TeXTextContext.class);
-  }
-
-  @Override
-  @Nullable
-  public PsiElement getCommentContext() {
-    return findChildByType(COMMENT_CONTEXT);
+  @NotNull
+  public List<TeXGroup> getGroupList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, TeXGroup.class);
   }
 
 }

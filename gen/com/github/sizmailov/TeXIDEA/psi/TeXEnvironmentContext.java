@@ -11,7 +11,7 @@ public interface TeXEnvironmentContext extends PsiElement {
   TeXEnvironmentBegin getEnvironmentBegin();
 
   @NotNull
-  List<TeXEnvironmentContent> getEnvironmentContentList();
+  TeXEnvironmentContent getEnvironmentContent();
 
   @NotNull
   TeXEnvironmentEnd getEnvironmentEnd();

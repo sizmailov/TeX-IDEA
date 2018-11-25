@@ -8,6 +8,9 @@ import com.intellij.psi.PsiElement;
 public interface TeXMathContent extends PsiElement {
 
   @NotNull
-  List<TeXMathElement> getMathElementList();
+  List<TeXEnvironmentContext> getEnvironmentContextList();
+
+  @NotNull
+  List<TeXGroup> getGroupList();
 
 }

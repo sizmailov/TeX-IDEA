@@ -7,7 +7,7 @@ import com.intellij.psi.PsiElement;
 
 public class TeXVisitor extends PsiElementVisitor {
 
-  public void visitContext(@NotNull TeXContext o) {
+  public void visitCommentContext(@NotNull TeXCommentContext o) {
     visitPsiElement(o);
   }
 
@@ -31,6 +31,18 @@ public class TeXVisitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
+  public void visitGenericContent(@NotNull TeXGenericContent o) {
+    visitPsiElement(o);
+  }
+
+  public void visitGenericContext(@NotNull TeXGenericContext o) {
+    visitPsiElement(o);
+  }
+
+  public void visitGroup(@NotNull TeXGroup o) {
+    visitPsiElement(o);
+  }
+
   public void visitInlineMathContext(@NotNull TeXInlineMathContext o) {
     visitPsiElement(o);
   }
@@ -43,11 +55,23 @@ public class TeXVisitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
-  public void visitMathElement(@NotNull TeXMathElement o) {
+  public void visitNewcommandBody(@NotNull TeXNewcommandBody o) {
     visitPsiElement(o);
   }
 
-  public void visitMathGroup(@NotNull TeXMathGroup o) {
+  public void visitNewcommandContext(@NotNull TeXNewcommandContext o) {
+    visitPsiElement(o);
+  }
+
+  public void visitNewcommandName(@NotNull TeXNewcommandName o) {
+    visitPsiElement(o);
+  }
+
+  public void visitNewcommandNargs(@NotNull TeXNewcommandNargs o) {
+    visitPsiElement(o);
+  }
+
+  public void visitNewcommandOptarg(@NotNull TeXNewcommandOptarg o) {
     visitPsiElement(o);
   }
 
@@ -56,14 +80,6 @@ public class TeXVisitor extends PsiElementVisitor {
   }
 
   public void visitTextContext(@NotNull TeXTextContext o) {
-    visitPsiElement(o);
-  }
-
-  public void visitTextElement(@NotNull TeXTextElement o) {
-    visitPsiElement(o);
-  }
-
-  public void visitTextGroup(@NotNull TeXTextGroup o) {
     visitPsiElement(o);
   }
 

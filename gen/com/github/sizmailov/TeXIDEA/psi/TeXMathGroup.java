@@ -8,6 +8,6 @@ import com.intellij.psi.PsiElement;
 public interface TeXMathGroup extends PsiElement {
 
   @NotNull
-  List<TeXMathElement> getMathElementList();
+  TeXMathContent getMathContent();
 
 }

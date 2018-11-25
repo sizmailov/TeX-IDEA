@@ -5,16 +5,10 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface TeXTextElement extends PsiElement {
+public interface TeXGenericElement extends PsiElement {
 
   @Nullable
   TeXBrackets getBrackets();
-
-  @Nullable
-  TeXEnvironmentContext getEnvironmentContext();
-
-  @Nullable
-  TeXMathContext getMathContext();
 
   @Nullable
   TeXTextGroup getTextGroup();

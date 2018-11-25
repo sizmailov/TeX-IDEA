@@ -8,6 +8,6 @@ import com.intellij.psi.PsiElement;
 public interface TeXTextGroup extends PsiElement {
 
   @NotNull
-  List<TeXTextElement> getTextElementList();
+  TeXTextContent getTextContent();
 
 }
