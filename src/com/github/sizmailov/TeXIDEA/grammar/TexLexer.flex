@@ -47,6 +47,7 @@ import static com.github.sizmailov.TeXIDEA.psi.TeXTypes.*;
 EOL=\R
 WHITE_SPACE=\s+
 
+DOLLARS=\$+
 COMMAND=(\\([a-zA-Z@]+|\\|.))
 WORD=[^\s\\{}%\[\]$\(\)]+
 NEW_LINE=[\r\n]*
@@ -55,95 +56,114 @@ COMMENT_CONTEXT=%[^\r\n]*
 ENVIRONMENT_IDENTIFIER=([^\${}]+)
 BRAKETS=([\[\]()])
 
-%states WITHIN_ENVIRONMENT WITHIN_TEXT_GROUP WITHIN_MATH_GROUP WITHIN_COMMENT WITHIN_INLINE_MATH_DOLLAR WITHIN_INLINE_MATH_PARENTHESES WITHIN_DISPLAY_MATH_DOLLAR WITHIN_DISPLAY_MATH_PARENTHESES EXPECT_ENV_BEGIN_OPEN_BRACE EXPECT_ENV_BEGIN_CLOSE_BRACE EXPECT_ENV_BEGIN_ID EXPECT_ENV_END_OPEN_BRACE EXPECT_ENV_END_CLOSE_BRACE EXPECT_ENV_END_ID
+//%states WITHIN_ENVIRONMENT WITHIN_TEXT_GROUP WITHIN_MATH_GROUP WITHIN_COMMENT WITHIN_INLINE_MATH_DOLLAR WITHIN_INLINE_MATH_PARENTHESES WITHIN_DISPLAY_MATH_DOLLAR WITHIN_DISPLAY_MATH_PARENTHESES EXPECT_ENV_BEGIN_OPEN_BRACE EXPECT_ENV_BEGIN_CLOSE_BRACE EXPECT_ENV_BEGIN_ID EXPECT_ENV_END_OPEN_BRACE EXPECT_ENV_END_CLOSE_BRACE EXPECT_ENV_END_ID
+
+%states WITHIN_TEXT_GROUP
 
 %%
 
-
-<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP> {
-    "$$"                                            { log("$$ in "); yypushState(WITHIN_DISPLAY_MATH_DOLLAR); return DISPLAY_MATH_DOLLAR; }
-    "\\["                                           { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES; }
-    "$"                                             { log("$ in "); yypushState(WITHIN_INLINE_MATH_DOLLAR); return INLINE_MATH_DOLLAR; }
-    "\\("                                           { log("\\( in ");yypushState(WITHIN_INLINE_MATH_PARENTHESES); return INLINE_MATH_BEGIN_PARENTHESES; }
-
-}
-
-<WITHIN_DISPLAY_MATH_PARENTHESES> {
-    "\\]"                                           { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES; }
-}
-
-<WITHIN_DISPLAY_MATH_DOLLAR> {
-    "$$"                                            { log("$$ out");yypopState(); return DISPLAY_MATH_DOLLAR; }
-}
-
-<WITHIN_INLINE_MATH_PARENTHESES> {
-    "\\)"                                          { log("\\) out"); yypopState(); return INLINE_MATH_END_PARENTHESES; }
-}
-
-<WITHIN_INLINE_MATH_DOLLAR> {
-    "$"                                            { log("$ out");yypopState(); return INLINE_MATH_DOLLAR; }
-}
-
-
-<WITHIN_ENVIRONMENT>{
- "\\end"       { log("env out"); yybegin(EXPECT_ENV_END_OPEN_BRACE); return ENVIRONMENT_END_TOKEN; }
-}
-
-
-<EXPECT_ENV_BEGIN_OPEN_BRACE>{
-    "{"  { log("env in {");  yybegin(EXPECT_ENV_BEGIN_ID); return BRACE_LEFT; }
-}
-
-<EXPECT_ENV_BEGIN_ID>{
-    {ENVIRONMENT_IDENTIFIER}  { log("env in <id>"); yybegin(EXPECT_ENV_BEGIN_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
-}
-
-<EXPECT_ENV_BEGIN_CLOSE_BRACE>{
-    "}"  { log("env in }"); yybegin(WITHIN_ENVIRONMENT); return BRACE_RIGHT; }
-}
-
-<EXPECT_ENV_END_OPEN_BRACE>{
-    "{"  { log("env out {"); yybegin(EXPECT_ENV_END_ID); return BRACE_LEFT; }
-}
-
-<EXPECT_ENV_END_ID>{
-    {ENVIRONMENT_IDENTIFIER}  { log("env out <id>"); yybegin(EXPECT_ENV_END_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
-}
-
-<EXPECT_ENV_END_CLOSE_BRACE>{
-    "}" { log("env out }"); yypopState(); return BRACE_RIGHT; }
-}
-
-
-
-<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP>{
- "{"                                                          { log("text group in {"); yypushState(WITHIN_TEXT_GROUP); return BRACE_LEFT; }
-}
-
-<WITHIN_INLINE_MATH_PARENTHESES,WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_MATH_GROUP>{
- "{"                                                          { log("math group in {"); yypushState(WITHIN_MATH_GROUP); return BRACE_LEFT; }
-}
-
-
-<WITHIN_MATH_GROUP>{
- "}"                                                           { log("math group out }"); yypopState(); return BRACE_RIGHT; }
-}
+ {WHITE_SPACE}             {log("<space>"); return WHITE_SPACE;}
+ {DOLLARS}                 {log("<dollars>"); return DOLLARS;}
+ {WORD}                    {log("<word>"); return WORD;}
+ {COMMENT_CONTEXT}         {log("<comment>"); return COMMENT_CONTEXT;}
+ "{"                       {log("text group in {"); yypushState(WITHIN_TEXT_GROUP); return BRACE_LEFT; }
+ {COMMAND}                 {log("<command>");  return COMMAND;}
+ "["                 {log("<>");  return BRACKET_LEFT;}
+ "]"                 {log("<>");  return BRACKET_RIGHT;}
+ "("                 {log("<>");  return PARENTHESES_LEFT;}
+ ")"                 {log("<>");  return PARENTHESES_RIGHT;}
 
 <WITHIN_TEXT_GROUP>{
- "}"                                                           { log("text group out }"); yypopState(); return BRACE_RIGHT; }
+ "}"                       { log("text group out }"); yypopState(); return BRACE_RIGHT; }
 }
 
 
 
-<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP, WITHIN_MATH_GROUP, EXPECT_ENV_BEGIN_OPEN_BRACE,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES, WITHIN_INLINE_MATH_PARENTHESES> {
- "\\begin"                  { log("env in"); yypushState(EXPECT_ENV_BEGIN_OPEN_BRACE); return ENVIRONMENT_BEGIN_TOKEN; }
- {BRAKETS}                                                    {log("[]()"); return BRACKETS; }
- {WHITE_SPACE}                                                {log("<space>"); return WHITE_SPACE; }
- {COMMENT_CONTEXT}                                            {log("<comment>"); return COMMENT_CONTEXT; }
- {COMMAND}                                                    {log("<command>");  return COMMAND;}
- {WORD}                                                       {log("<word>");  return WORD; }
-}
-
-
+//
+//<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP> {
+//    "$$"                                            { log("$$ in "); yypushState(WITHIN_DISPLAY_MATH_DOLLAR); return DISPLAY_MATH_DOLLAR; }
+//    "\\["                                           { log("\\[ in "); yypushState(WITHIN_DISPLAY_MATH_PARENTHESES); return DISPLAY_MATH_BEGIN_PARENTHESES; }
+//    "$"                                             { log("$ in "); yypushState(WITHIN_INLINE_MATH_DOLLAR); return INLINE_MATH_DOLLAR; }
+//    "\\("                                           { log("\\( in ");yypushState(WITHIN_INLINE_MATH_PARENTHESES); return INLINE_MATH_BEGIN_PARENTHESES; }
+//
+//}
+//
+//<WITHIN_DISPLAY_MATH_PARENTHESES> {
+//    "\\]"                                           { log("\\] out");yypopState(); return DISPLAY_MATH_END_PARENTHESES; }
+//}
+//
+//<WITHIN_DISPLAY_MATH_DOLLAR> {
+//    "$$"                                            { log("$$ out");yypopState(); return DISPLAY_MATH_DOLLAR; }
+//}
+//
+//<WITHIN_INLINE_MATH_PARENTHESES> {
+//    "\\)"                                          { log("\\) out"); yypopState(); return INLINE_MATH_END_PARENTHESES; }
+//}
+//
+//<WITHIN_INLINE_MATH_DOLLAR> {
+//    "$"                                            { log("$ out");yypopState(); return INLINE_MATH_DOLLAR; }
+//}
+//
+//
+//<WITHIN_ENVIRONMENT>{
+// "\\end"       { log("env out"); yybegin(EXPECT_ENV_END_OPEN_BRACE); return ENVIRONMENT_END_TOKEN; }
+//}
+//
+//
+//<EXPECT_ENV_BEGIN_OPEN_BRACE>{
+//    "{"  { log("env in {");  yybegin(EXPECT_ENV_BEGIN_ID); return BRACE_LEFT; }
+//}
+//
+//<EXPECT_ENV_BEGIN_ID>{
+//    {ENVIRONMENT_IDENTIFIER}  { log("env in <id>"); yybegin(EXPECT_ENV_BEGIN_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
+//}
+//
+//<EXPECT_ENV_BEGIN_CLOSE_BRACE>{
+//    "}"  { log("env in }"); yybegin(WITHIN_ENVIRONMENT); return BRACE_RIGHT; }
+//}
+//
+//<EXPECT_ENV_END_OPEN_BRACE>{
+//    "{"  { log("env out {"); yybegin(EXPECT_ENV_END_ID); return BRACE_LEFT; }
+//}
+//
+//<EXPECT_ENV_END_ID>{
+//    {ENVIRONMENT_IDENTIFIER}  { log("env out <id>"); yybegin(EXPECT_ENV_END_CLOSE_BRACE); return ENVIRONMENT_IDENTIFIER; }
+//}
+//
+//<EXPECT_ENV_END_CLOSE_BRACE>{
+//    "}" { log("env out }"); yypopState(); return BRACE_RIGHT; }
+//}
+//
+//
+//
+//<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP>{
+// "{"                                                          { log("text group in {"); yypushState(WITHIN_TEXT_GROUP); return BRACE_LEFT; }
+//}
+//
+//<WITHIN_INLINE_MATH_PARENTHESES,WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_MATH_GROUP>{
+// "{"                                                          { log("math group in {"); yypushState(WITHIN_MATH_GROUP); return BRACE_LEFT; }
+//}
+//
+//
+//<WITHIN_MATH_GROUP>{
+// "}"                                                           { log("math group out }"); yypopState(); return BRACE_RIGHT; }
+//}
+//
+//<WITHIN_TEXT_GROUP>{
+// "}"                                                           { log("text group out }"); yypopState(); return BRACE_RIGHT; }
+//}
+//
+//
+//
+//<YYINITIAL, WITHIN_ENVIRONMENT, WITHIN_TEXT_GROUP, WITHIN_MATH_GROUP, EXPECT_ENV_BEGIN_OPEN_BRACE,WITHIN_DISPLAY_MATH_DOLLAR, WITHIN_INLINE_MATH_DOLLAR,WITHIN_DISPLAY_MATH_PARENTHESES, WITHIN_INLINE_MATH_PARENTHESES> {
+// "\\begin"                  { log("env in"); yypushState(EXPECT_ENV_BEGIN_OPEN_BRACE); return ENVIRONMENT_BEGIN_TOKEN; }
+// {BRAKETS}                                                    {log("[]()"); return BRACKETS; }
+// {WHITE_SPACE}                                                {log("<space>"); return WHITE_SPACE; }
+// {COMMENT_CONTEXT}                                            {log("<comment>"); return COMMENT_CONTEXT; }
+// {COMMAND}                                                    {log("<command>");  return COMMAND;}
+// {WORD}                                                       {log("<word>");  return WORD; }
+//}
+//
+//
 
 [^] { return BAD_CHARACTER; }

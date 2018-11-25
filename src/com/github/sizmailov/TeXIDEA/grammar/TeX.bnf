@@ -15,6 +15,7 @@
   tokens=[
         environment_begin_token = "\begin"
         environment_end_token = "\end"
+        dollars = "$+"
         inline_math_dollar = "$"
         inline_math_begin_parentheses = "\("
         inline_math_end_parentheses = "\)"
@@ -35,18 +36,24 @@
         escape = "\\"
         comment_context = 'regexp:%[^\r\n]*'
         environment_identifier = 'regexp:([^\${}]+)'
-        brakets='regexp:([\[\]()])'
 ]
 }
 
 
 latexFile ::= context*
 
-context ::= text_context | comment_context
+context ::= generic_context | comment_context
 
-text_context ::= text_content+
+generic_context ::= generic_content
+generic_content ::= generic_element+
+private generic_element ::= text_group | word | command | brackets | dollars
+
+text_context ::= text_content
 text_content ::= text_element+
 text_element ::= text_group | word | command | environment_context | math_context | brackets
+
+
+brackets ::= "(" | ")" | "[" | "]"
 
 text_group ::= "{" text_element* "}"
 math_group ::= "{" math_element* "}"
